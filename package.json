@@ -1,0 +1,15 @@
+{
+  "name": "geocache-mini-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local three-node geo-distributed active-active cache prototype",
+  "scripts": {
+    "start:gateway": "node gateway/server.js",
+    "start:node-a": "node cache-node/server.js",
+    "start:node-b": "node cache-node/server.js",
+    "start:node-c": "node cache-node/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

@@ -1,0 +1,42 @@
+services:
+  gateway:
+    build: .
+    command: node gateway/server.js
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_A_URL: http://cache-a:5001
+      NODE_B_URL: http://cache-b:5002
+      NODE_C_URL: http://cache-c:5003
+    depends_on:
+      - cache-a
+      - cache-b
+      - cache-c
+
+  cache-a:
+    build: .
+    command: node cache-node/server.js
+    environment:
+      NODE_ID: node-a
+      REGION: Mumbai
+      PORT: 5001
+      PEERS: node-b=http://cache-b:5002,node-c=http://cache-c:5003
+
+  cache-b:
+    build: .
+    command: node cache-node/server.js
+    environment:
+      NODE_ID: node-b
+      REGION: Frankfurt
+      PORT: 5002
+      PEERS: node-a=http://cache-a:5001,node-c=http://cache-c:5003
+
+  cache-c:
+    build: .
+    command: node cache-node/server.js
+    environment:
+      NODE_ID: node-c
+      REGION: Virginia
+      PORT: 5003
+      PEERS: node-a=http://cache-a:5001,node-b=http://cache-b:5002
