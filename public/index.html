@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GeoCache Active-Active | Global Distributed Control Center</title>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card-bg: #131b26;
+      --card-border: #212e40;
+      --text: #e2e8f0;
+      --text-muted: #8492a6;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --green: #10b981;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --purple: #a855f7;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container { max-width: 1300px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 4px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    h1 { font-size: 26px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .subtitle { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+    .store-links { display: flex; gap: 10px; }
+    .btn-store {
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      padding: 8px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-store:hover { background: #38bdf8; color: #0b0f17; }
+    
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .grid-2 { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px; margin-bottom: 24px; }
+    
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    /* Regional Nodes */
+    .node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .node-name { font-size: 20px; font-weight: 700; }
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .status-pill.healthy { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+    .status-pill.down { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    
+    .metrics-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .metric-box {
+      background: #0d131d;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #1a2536;
+    }
+    .metric-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+    .metric-val { font-size: 18px; font-weight: 700; font-family: var(--font-mono); margin-top: 2px; }
+    
+    .cb-list { margin-top: 12px; font-size: 12px; }
+    .cb-item { display: flex; justify-content: space-between; padding: 4px 0; border-top: 1px solid #1a2536; }
+    .cb-state { font-family: var(--font-mono); font-weight: bold; }
+    .cb-state.CLOSED { color: var(--green); }
+    .cb-state.OPEN { color: var(--red); }
+    .cb-state.HALF_OPEN { color: var(--yellow); }
+
+    /* Interactive Simulators */
+    label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    input, select, textarea {
+      width: 100%;
+      background: #0d131d;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    
+    .btn-group { display: flex; gap: 10px; margin-top: 6px; }
+    button {
+      background: var(--accent);
+      color: #0b0f17;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:hover { opacity: 0.9; }
+    button.secondary { background: #1e293b; color: var(--text); border: 1px solid #334155; }
+    button.danger { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+    button.heal { background: rgba(16, 185, 129, 0.2); color: var(--green); border: 1px solid var(--green); }
+
+    pre {
+      background: #090d14;
+      border: 1px solid #1a2536;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #93c5fd;
+      overflow-x: auto;
+      max-height: 220px;
+    }
+    
+    .crdt-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .scenario-btn {
+      background: #0d131d;
+      border: 1px solid #1e293b;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .scenario-btn:hover { border-color: var(--accent); }
+    .scenario-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+    .scenario-desc { font-size: 11px; color: var(--text-muted); }
+
+    /* Ring Visualizer */
+    .ring-box {
+      background: #0d131d;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 12px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>
+          <span>⚡ GeoCache Active-Active</span>
+          <span class="badge">Production Cloud Engine</span>
+        </h1>
+        <p class="subtitle">Multi-Region Cache with Consistent Hash Ring, Hybrid Logical Clocks, CRDTs & Resilient Batch Outbox</p>
+      </div>
+      <div class="store-links">
+        <a class="btn-store" href="/mumbai.html" target="_blank">🇮🇳 Mumbai Store</a>
+        <a class="btn-store" href="/frankfurt.html" target="_blank">🇩🇪 Frankfurt Store</a>
+        <a class="btn-store" href="/virginia.html" target="_blank">🇺🇸 Virginia Store</a>
+      </div>
+    </header>
+
+    <!-- Top Regional Nodes Grid -->
+    <div class="card-title">🌐 Active-Active Distributed Topology & Circuit Breakers</div>
+    <div id="regionsGrid" class="grid-3">
+      <div class="card"><p class="subtitle">Connecting to regional telemetry...</p></div>
+    </div>
+
+    <!-- Middle Split: Consistent Hashing Ring & Chaos Partition Controller -->
+    <div class="grid-2">
+      <!-- Consistent Hash Ring Explorer -->
+      <div class="card">
+        <div class="card-title">
+          <span>🎯 Consistent Hash Ring (Geo-Sharding)</span>
+          <span class="badge">Virtual Nodes: 128/node</span>
+        </div>
+        <p class="subtitle">Maps cache keys deterministically to primary replica nodes and generates preference lists.</p>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <input id="hashKeyInput" value="cart:user-42" placeholder="Enter cache key (e.g. cart:user-42, inventory:shoe-101)">
+          <button style="height: 38px; white-space: nowrap;" onclick="lookupHash()">Locate Shard</button>
+        </div>
+        <div id="ringResult" class="ring-box">Type a key and click Locate Shard to inspect preference lists on the ring.</div>
+      </div>
+
+      <!-- Network Partition & Replay Controller -->
+      <div class="card">
+        <div class="card-title">
+          <span>⚡ Chaos & Queue Replay Controller</span>
+          <span class="badge">Toxiproxy Mesh</span>
+        </div>
+        <p class="subtitle">Sever inter-region links to simulate network partitions. Outbox buffers events and batch-replays on recovery.</p>
+        <div style="display: flex; gap: 8px; margin-top: 12px;">
+          <select id="linkSelect">
+            <option value="mumbai-frankfurt">mumbai ➔ frankfurt</option>
+            <option value="frankfurt-mumbai">frankfurt ➔ mumbai</option>
+            <option value="mumbai-virginia">mumbai ➔ virginia</option>
+            <option value="virginia-mumbai">virginia ➔ mumbai</option>
+            <option value="frankfurt-virginia">frankfurt ➔ virginia</option>
+            <option value="virginia-frankfurt">virginia ➔ frankfurt</option>
+          </select>
+          <button class="danger" style="white-space: nowrap;" onclick="toggleLink(false)">Cut Link</button>
+          <button class="heal" style="white-space: nowrap;" onclick="toggleLink(true)">Heal & Replay</button>
+        </div>
+        <pre id="linkStatus" style="margin-top: 12px; min-height: 58px;">Ready. Cut a link to test outbox buffering and circuit breakers.</pre>
+      </div>
+    </div>
+
+    <!-- Bottom Split: Interactive Request Simulator & CRDT Playground -->
+    <div class="grid-2">
+      <!-- Simulator -->
+      <div class="card">
+        <div class="card-title">
+          <span>📡 Distributed Read / Write Simulator</span>
+          <span class="badge">Multi-Tier L1/L2 Cache</span>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Client Region</label>
+            <select id="simRegion">
+              <option value="mumbai">Mumbai</option>
+              <option value="frankfurt">Frankfurt</option>
+              <option value="virginia">Virginia</option>
+            </select>
+          </div>
+          <div>
+            <label>Data Type</label>
+            <select id="simDataType">
+              <option value="lww">LWW-Register (HLC)</option>
+              <option value="pn_counter">PN-Counter (CRDT)</option>
+              <option value="or_set">OR-Set (Cart CRDT)</option>
+            </select>
+          </div>
+          <div>
+            <label>Record Key</label>
+            <input id="simKey" value="inventory:shoe-101">
+          </div>
+        </div>
+        <label>Payload (JSON)</label>
+        <textarea id="simValue" rows="3">{"sku":"shoe-101","available":50,"reserved":0}</textarea>
+        <div class="btn-group">
+          <button onclick="executeWrite()">Execute Write</button>
+          <button class="secondary" onclick="executeRead()">Execute Read</button>
+        </div>
+        <pre id="simOutput" style="margin-top: 12px;">Result output with HLC, cache source (L1/Redis/PostgreSQL), and trace ID will appear here.</pre>
+      </div>
+
+      <!-- CRDT & Scenarios -->
+      <div class="card">
+        <div class="card-title">
+          <span>🧪 Conflict Resolution Scenarios</span>
+          <span class="badge">Zero Data Loss</span>
+        </div>
+        <p class="subtitle">Quickly load realistic distributed scenarios to observe conflict resolution and causal HLC order.</p>
+        <div class="crdt-cards">
+          <div class="scenario-btn" onclick="loadScenario('inventory_crdt')">
+            <div class="scenario-title">📦 Flash-Sale Stock (PN-Counter)</div>
+            <div class="scenario-desc">Concurrent inventory reservations merge with zero overselling</div>
+          </div>
+          <div class="scenario-btn" onclick="loadScenario('cart_crdt')">
+            <div class="scenario-title">🛒 Cart Merge (OR-Set)</div>
+            <div class="scenario-desc">Concurrent adds across regions merge with Add-Wins semantics</div>
+          </div>
+          <div class="scenario-btn" onclick="loadScenario('order_lww')">
+            <div class="scenario-title">💳 Order Status (HLC Monotonic)</div>
+            <div class="scenario-desc">Status transitions ordered by Hybrid Logical Clock</div>
+          </div>
+          <div class="scenario-btn" onclick="loadScenario('hot_read')">
+            <div class="scenario-title">⚡ Hot Read (XFetch Stampede)</div>
+            <div class="scenario-desc">Simulate high-concurrency read served from L1 micro-cache</div>
+          </div>
+        </div>
+        <div class="ring-box" style="margin-top: 16px;">
+          <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">AWS CloudWatch Observability Note:</div>
+          <p class="subtitle" style="font-size: 11px;">All regional events and micro-batches emit AWS Embedded Metric Format (EMF) logs with distributed TraceIDs (<code>1-timestamp-guid</code>) for X-Ray tracing and CloudWatch custom metrics.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    async function fetchTopology() {
+      try {
+        const res = await fetch('/api/topology');
+        const data = await res.json();
+        renderRegions(data.regions);
+      } catch (err) {
+        console.error('Topology fetch failed', err);
+      }
+    }
+
+    function renderRegions(regions) {
+      if (!regions) return;
+      $('regionsGrid').innerHTML = Object.entries(regions).map(([name, r]) => {
+        const d = r.details || {};
+        const m = d.metrics || {};
+        const ob = d.outbox || {};
+        const dlq = d.dlq || {};
+        const cbs = d.circuitBreakers || {};
+
+        const cbHtml = Object.entries(cbs).map(([peer, state]) => `
+          <div class="cb-item">
+            <span>Link ➔ ${peer}</span>
+            <span class="cb-state ${state.state}">${state.state}</span>
+          </div>
+        `).join('');
+
+        return `
+          <div class="card">
+            <div class="node-header">
+              <span class="node-name">${name.toUpperCase()}</span>
+              <span class="status-pill ${r.healthy ? 'healthy' : 'down'}">
+                ● ${r.healthy ? 'HEALTHY' : 'DOWN'} (${r.latencyMs}ms)
+              </span>
+            </div>
+            <div class="metrics-row">
+              <div class="metric-box">
+                <div class="metric-label">Outbox Pending</div>
+                <div class="metric-val" style="color: ${ob.pending > 0 ? 'var(--yellow)' : 'var(--green)'}">
+                  ${ob.pending ?? 0}
+                </div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-label">Delivered Events</div>
+                <div class="metric-val" style="color: var(--accent);">${ob.delivered ?? 0}</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-label">Cache Hits (L1/L2)</div>
+                <div class="metric-val">${(m.cacheHitsL1 || 0) + (m.cacheHitsL2 || 0)}</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-label">Dead-Letter (DLQ)</div>
+                <div class="metric-val" style="color: ${dlq.count > 0 ? 'var(--red)' : 'var(--text-muted)'}">
+                  ${dlq.count ?? 0}
+                </div>
+              </div>
+            </div>
+            <div class="cb-list">
+              <div style="font-weight: 600; font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">OUTBOUND CIRCUIT BREAKERS:</div>
+              ${cbHtml || '<span style="color:var(--text-muted)">No peers configured</span>'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function lookupHash() {
+      const key = $('hashKeyInput').value.trim();
+      if (!key) return;
+      try {
+        const res = await fetch(`/api/ring?key=${encodeURIComponent(key)}`);
+        const data = await res.json();
+        $('ringResult').innerHTML = `
+          <div><strong>Key:</strong> ${data.key}</div>
+          <div><strong>Primary Shard Node:</strong> <span style="color:var(--accent); font-weight:bold;">${data.primaryNode.toUpperCase()}</span></div>
+          <div><strong>Preference List (Quorum Replicas):</strong> ${data.preferenceList.map(n => n.toUpperCase()).join(' ➔ ')}</div>
+          <div><strong>Virtual Nodes per Node:</strong> ${data.vnodesPerNode}</div>
+        `;
+      } catch (err) {
+        $('ringResult').textContent = 'Error querying hash ring: ' + err.message;
+      }
+    }
+
+    async function toggleLink(enabled) {
+      const link = $('linkSelect').value;
+      $('linkStatus').textContent = `Sending command: ${link} -> ${enabled ? 'HEAL' : 'CUT'}...`;
+      try {
+        const res = await fetch(`/api/links/${link}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ enabled })
+        });
+        const data = await res.json();
+        $('linkStatus').textContent = JSON.stringify(data, null, 2);
+        fetchTopology();
+      } catch (err) {
+        $('linkStatus').textContent = 'Link error: ' + err.message;
+      }
+    }
+
+    async function executeWrite() {
+      const region = $('simRegion').value;
+      const key = $('simKey').value.trim();
+      const dataType = $('simDataType').value;
+      let value;
+      try {
+        value = JSON.parse($('simValue').value);
+      } catch {
+        value = $('simValue').value;
+      }
+
+      $('simOutput').textContent = 'Submitting atomic write...';
+      try {
+        const res = await fetch(`/api/records/${encodeURIComponent(key)}?region=${region}`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ value, dataType })
+        });
+        const data = await res.json();
+        $('simOutput').textContent = JSON.stringify(data, null, 2);
+        fetchTopology();
+      } catch (err) {
+        $('simOutput').textContent = 'Write error: ' + err.message;
+      }
+    }
+
+    async function executeRead() {
+      const region = $('simRegion').value;
+      const key = $('simKey').value.trim();
+      $('simOutput').textContent = 'Executing read through cache hierarchy...';
+      try {
+        const res = await fetch(`/api/records/${encodeURIComponent(key)}?region=${region}`);
+        const data = await res.json();
+        $('simOutput').textContent = JSON.stringify(data, null, 2);
+        fetchTopology();
+      } catch (err) {
+        $('simOutput').textContent = 'Read error: ' + err.message;
+      }
+    }
+
+    const scenarios = {
+      inventory_crdt: {
+        region: 'virginia',
+        key: 'inventory:shoe-101',
+        dataType: 'pn_counter',
+        value: '{"type":"pn_counter","P":{"mumbai":100,"virginia":20},"N":{"virginia":3}}'
+      },
+      cart_crdt: {
+        region: 'mumbai',
+        key: 'cart:user-99',
+        dataType: 'or_set',
+        value: '{"type":"or_set","elements":[{"item":{"sku":"shoe-101","qty":1},"tag":"mumbai-tag-1"}],"tombstones":[]}'
+      },
+      order_lww: {
+        region: 'frankfurt',
+        key: 'order:GC-9001',
+        dataType: 'lww',
+        value: '{"orderId":"GC-9001","status":"paid","total":189.00}'
+      },
+      hot_read: {
+        region: 'mumbai',
+        key: 'inventory:shoe-101',
+        dataType: 'lww',
+        value: '{"sku":"shoe-101","stock":47}'
+      }
+    };
+
+    function loadScenario(name) {
+      const s = scenarios[name];
+      if (!s) return;
+      $('simRegion').value = s.region;
+      $('simKey').value = s.key;
+      $('simDataType').value = s.dataType;
+      $('simValue').value = s.value;
+      $('simOutput').textContent = `Loaded scenario [${name}]. Click "Execute Write" or "Execute Read".`;
+    }
+
+    setInterval(fetchTopology, 2000);
+    fetchTopology();
+    lookupHash();
+  </script>
+</body>
+</html>

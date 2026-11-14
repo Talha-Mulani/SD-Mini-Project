@@ -1,0 +1,30 @@
+{
+  "deployedAt": "2026-11-13T14:39:17.153Z",
+  "account": "301572152039",
+  "securityGroupId": "sg-015fdbeb06749cd38",
+  "instances": {
+    "mumbai": {
+      "id": "i-039912dbc6e2a10b3",
+      "port": 5001
+    },
+    "frankfurt": {
+      "id": "i-00bbda26188437a2e",
+      "port": 5002
+    },
+    "virginia": {
+      "id": "i-08ee336c1709a3030",
+      "port": 5003
+    }
+  },
+  "publicIps": {
+    "frankfurt": "3.88.2.144",
+    "mumbai": "54.210.14.166",
+    "virginia": "3.92.82.166"
+  },
+  "gatewayUrl": "http://3.92.82.166:3000",
+  "nodes": {
+    "mumbai": "http://54.210.14.166:5001",
+    "frankfurt": "http://3.88.2.144:5002",
+    "virginia": "http://3.92.82.166:5003"
+  }
+}

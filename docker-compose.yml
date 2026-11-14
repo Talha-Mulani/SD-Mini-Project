@@ -1,0 +1,145 @@
+services:
+  postgres-mumbai:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: geocache
+      POSTGRES_USER: geocache
+      POSTGRES_PASSWORD: geocache
+    volumes:
+      - pg-mumbai:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+
+  postgres-frankfurt:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: geocache
+      POSTGRES_USER: geocache
+      POSTGRES_PASSWORD: geocache
+    volumes:
+      - pg-frankfurt:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+
+  postgres-virginia:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: geocache
+      POSTGRES_USER: geocache
+      POSTGRES_PASSWORD: geocache
+    volumes:
+      - pg-virginia:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+
+  redis-mumbai:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-mumbai:/data
+
+  redis-frankfurt:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-frankfurt:/data
+
+  redis-virginia:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-virginia:/data
+
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    command: -host=0.0.0.0
+    ports:
+      - "8574:8474"
+
+  region-mumbai:
+    build: .
+    command: node services/region.js
+    environment:
+      REGION: mumbai
+      PORT: 5001
+      DATABASE_URL: postgres://geocache:geocache@postgres-mumbai:5432/geocache
+      REDIS_URL: redis://redis-mumbai:6379
+      PEERS: '{"frankfurt":"http://toxiproxy:6001","virginia":"http://toxiproxy:6002"}'
+      SECURITY_MODE: permissive
+      INTER_REGION_SECRET: geocache-cluster-secret
+    depends_on:
+      postgres-mumbai:
+        condition: service_started
+      redis-mumbai:
+        condition: service_started
+      toxiproxy:
+        condition: service_started
+
+  region-frankfurt:
+    build: .
+    command: node services/region.js
+    environment:
+      REGION: frankfurt
+      PORT: 5002
+      DATABASE_URL: postgres://geocache:geocache@postgres-frankfurt:5432/geocache
+      REDIS_URL: redis://redis-frankfurt:6379
+      PEERS: '{"mumbai":"http://toxiproxy:6003","virginia":"http://toxiproxy:6004"}'
+      SECURITY_MODE: permissive
+      INTER_REGION_SECRET: geocache-cluster-secret
+    depends_on:
+      postgres-frankfurt:
+        condition: service_started
+      redis-frankfurt:
+        condition: service_started
+      toxiproxy:
+        condition: service_started
+
+  region-virginia:
+    build: .
+    command: node services/region.js
+    environment:
+      REGION: virginia
+      PORT: 5003
+      DATABASE_URL: postgres://geocache:geocache@postgres-virginia:5432/geocache
+      REDIS_URL: redis://redis-virginia:6379
+      PEERS: '{"mumbai":"http://toxiproxy:6005","frankfurt":"http://toxiproxy:6006"}'
+      SECURITY_MODE: permissive
+      INTER_REGION_SECRET: geocache-cluster-secret
+    depends_on:
+      postgres-virginia:
+        condition: service_started
+      redis-virginia:
+        condition: service_started
+      toxiproxy:
+        condition: service_started
+
+  toxiproxy-init:
+    build: .
+    command: node services/toxiproxy-init.js
+    depends_on:
+      toxiproxy:
+        condition: service_started
+      region-mumbai:
+        condition: service_started
+      region-frankfurt:
+        condition: service_started
+      region-virginia:
+        condition: service_started
+
+  gateway:
+    build: .
+    command: node services/gateway.js
+    environment:
+      PORT: 3000
+      TOXIPROXY_URL: http://toxiproxy:8474
+      REGIONS: '{"mumbai":"http://region-mumbai:5001","frankfurt":"http://region-frankfurt:5002","virginia":"http://region-virginia:5003"}'
+    depends_on:
+      toxiproxy-init:
+        condition: service_completed_successfully
+    ports:
+      - "3100:3000"
+
+volumes:
+  pg-mumbai:
+  pg-frankfurt:
+  pg-virginia:
+  redis-mumbai:
+  redis-frankfurt:
+  redis-virginia:
