@@ -164,6 +164,21 @@ app.get('/metrics', (req, res) => {
   res.send(logger.toPrometheus());
 });
 
+app.post('/internal/partition', (req, res) => {
+  const { peer, severed } = req.body;
+  if (!peer) return res.status(400).json({ error: 'peer is required' });
+
+  const success = queueWorker.setPeerPartition(peer, !!severed);
+  logger.info('Chaos', `Partition for peer [${peer}] set to: ${severed ? 'SEVERED' : 'HEALED'}`);
+  res.json({
+    region,
+    peer,
+    severed: !!severed,
+    success,
+    circuitBreakers: queueWorker.getTopologyStatus()
+  });
+});
+
 app.get('/internal/records/:key', async (req, res) => {
   const key = req.params.key;
   logger.recordMetrics('GeoCache', [{ name: 'localReads', value: 1 }]);

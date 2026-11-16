@@ -158,19 +158,51 @@ app.get('/api/ring', (req, res) => {
 
 app.post('/api/links/:link', async (req, res) => {
   const enabled = req.body.enabled !== false;
+  
+  // 1. Try Toxiproxy first (standard for local Docker Compose mesh)
   try {
     const response = await fetch(`${toxiproxyUrl}/proxies/${req.params.link}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ enabled })
+      body: JSON.stringify({ enabled }),
+      signal: AbortSignal.timeout(600)
     });
-    if (!response.ok) {
-      return res.status(502).json({ error: `Link update failed with status ${response.status}` });
+    if (response.ok) {
+      return res.json({ link: req.params.link, enabled, mode: 'toxiproxy' });
     }
-    res.json({ link: req.params.link, enabled });
   } catch (err) {
-    res.status(502).json({ error: `Toxiproxy unreachable: ${err.message}` });
+    // Toxiproxy not running (expected in real AWS EC2 cloud deployment)
   }
+
+  // 2. Cloud Mode: Dispatch partition to the source regional node
+  // Link convention: "<sourceRegion>-<destRegion>" (e.g. "mumbai-frankfurt")
+  const parts = req.params.link.split('-');
+  if (parts.length === 2) {
+    const fromRegion = parts[0];
+    const toRegion = parts[1];
+
+    if (regions[fromRegion]) {
+      try {
+        const resp = await fetch(`${regions[fromRegion]}/internal/partition`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ peer: toRegion, severed: !enabled }),
+          signal: AbortSignal.timeout(3000)
+        });
+        const data = await resp.json();
+        return res.json({
+          link: req.params.link,
+          enabled,
+          mode: 'cloud-cluster',
+          details: data
+        });
+      } catch (e) {
+        return res.status(502).json({ error: `Failed to set partition on ${fromRegion}: ${e.message}` });
+      }
+    }
+  }
+
+  res.status(400).json({ error: `Unknown link [${req.params.link}]` });
 });
 
 app.listen(port, () => {
