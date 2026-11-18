@@ -179,6 +179,14 @@ app.post('/internal/partition', (req, res) => {
   });
 });
 
+app.get('/internal/logs', (req, res) => {
+  const limit = Math.min(Number(req.query.limit || 50), 100);
+  res.json({
+    region,
+    logs: logger.getRecentLogs(limit)
+  });
+});
+
 app.get('/internal/recent-keys', async (req, res) => {
   try {
     const result = await pg.query(

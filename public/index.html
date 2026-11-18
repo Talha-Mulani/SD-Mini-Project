@@ -433,6 +433,33 @@
       </div>
       <div id="scenarioProgress" style="margin-top:12px;font-size:12px;color:var(--accent);"></div>
     </div>
+
+    <!-- SECTION 5: LIVE DISTRIBUTED LOG STREAM -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="margin-bottom:0;">
+          <span>📜 Real-Time Distributed Log Stream (CloudWatch EMF & Replication Events)</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="logRegionFilter" style="width:auto;padding:3px 8px;font-size:11px;" onchange="fetchLiveLogs()">
+            <option value="">🌐 All Regions</option>
+            <option value="mumbai">🇮🇳 Mumbai Logs</option>
+            <option value="frankfurt">🇩🇪 Frankfurt Logs</option>
+            <option value="virginia">🇺🇸 Virginia Logs</option>
+          </select>
+          <select id="logLevelFilter" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderLogs()">
+            <option value="">All Levels</option>
+            <option value="INFO">INFO</option>
+            <option value="WARN">WARN</option>
+            <option value="ERROR">ERROR</option>
+          </select>
+          <button class="secondary" style="padding:3px 8px;font-size:11px;" onclick="fetchLiveLogs()">🔄 Refresh</button>
+        </div>
+      </div>
+      <div id="logsConsole" style="background:#05070a;border:1px solid #1a2536;border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:11px;max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;">
+        <span style="color:var(--text-muted);">Connecting to live regional log stream...</span>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -823,11 +850,59 @@
       }).join('');
     }
 
+    let cachedLogs = [];
+
+    async function fetchLiveLogs() {
+      const region = $('logRegionFilter').value;
+      const url = region ? `/api/logs?region=${region}&limit=50` : '/api/logs?limit=50';
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          cachedLogs = data.logs || [];
+          renderLogs();
+        }
+      } catch {}
+    }
+
+    function renderLogs() {
+      const container = $('logsConsole');
+      const levelFilter = $('logLevelFilter').value;
+      let logs = cachedLogs;
+      if (levelFilter) {
+        logs = logs.filter(l => l.level === levelFilter);
+      }
+
+      if (!logs.length) {
+        container.innerHTML = '<span style="color:var(--text-muted);">No log events matched filter.</span>';
+        return;
+      }
+
+      container.innerHTML = logs.map(l => {
+        let levelColor = 'var(--green)';
+        if (l.level === 'WARN') levelColor = 'var(--yellow)';
+        if (l.level === 'ERROR') levelColor = 'var(--red)';
+        const time = (l.timestamp || '').slice(11, 19);
+
+        return `
+          <div style="padding:2px 0;border-bottom:1px solid #0f1622;display:flex;gap:8px;align-items:baseline;">
+            <span style="color:var(--text-muted);">${time}</span>
+            <span style="color:${levelColor};font-weight:700;">[${l.level}]</span>
+            <span style="color:var(--accent);font-weight:600;">[${(l.region || 'gateway').toUpperCase()}]</span>
+            <span style="color:var(--purple);font-weight:600;">[${l.component || 'Core'}]</span>
+            <span style="color:#f1f5f9;flex:1;">${l.message || ''}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       $('liveDashboardUrl').textContent = window.location.origin;
       onActionChange();
       fetchLiveStats();
       setInterval(fetchLiveStats, 2000);
+      fetchLiveLogs();
+      setInterval(fetchLiveLogs, 2500);
       queryGlobalCache();
     });
   </script>

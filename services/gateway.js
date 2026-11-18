@@ -223,6 +223,31 @@ app.get('/api/keys', async (req, res) => {
   res.json({ keys: Array.from(seenKeys.values()) });
 });
 
+app.get('/api/logs', async (req, res) => {
+  const targetRegion = req.query.region;
+  const limit = Math.min(Number(req.query.limit || 60), 150);
+  const allLogs = [...logger.getRecentLogs(30)];
+
+  const selectedRegions = targetRegion && regions[targetRegion]
+    ? [[targetRegion, regions[targetRegion]]]
+    : Object.entries(regions);
+
+  await Promise.all(selectedRegions.map(async ([r, url]) => {
+    try {
+      const resp = await fetch(`${url}/internal/logs?limit=${limit}`, { signal: AbortSignal.timeout(1000) });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data.logs)) {
+          allLogs.push(...data.logs);
+        }
+      }
+    } catch {}
+  }));
+
+  allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  res.json({ logs: allLogs.slice(0, limit) });
+});
+
 app.get('/api/ring', (req, res) => {
   const sampleKey = req.query.key || 'cart:sample';
   const primary = hashRing.getNode(sampleKey);
