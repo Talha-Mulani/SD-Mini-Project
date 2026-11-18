@@ -399,6 +399,7 @@ async function pollRegionalTelemetry() {
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
+  if ($('activeUserLabel')) $('activeUserLabel').textContent = currentUser.toUpperCase();
   renderProducts();
   loadCartForUser();
   $('cacheKeyInput').value = `cart:${currentUser}`;

@@ -36,10 +36,21 @@
           <div style="font-size:11px;color:var(--text-muted);">Switch customer profile:</div>
         </div>
         <select class="user-select" onchange="switchUser(this.value)">
-          <option value="charlie" selected>👤 Charlie (Virginia VIP)</option>
-          <option value="alice">👤 Alice (Mumbai Local)</option>
-          <option value="bob">👤 Bob (Frankfurt Shopper)</option>
-          <option value="david">👤 David (Global Buyer)</option>
+          <optgroup label="🇺🇸 Virginia Regional Shoppers">
+            <option value="alex" selected>👤 Alex Mercer (Virginia - Architect)</option>
+            <option value="sarah">👤 Sarah Connor (Virginia - VIP Buyer)</option>
+            <option value="marcus">👤 Marcus Vance (Virginia - Data Eng)</option>
+          </optgroup>
+          <optgroup label="🇮🇳 Mumbai Profiles">
+            <option value="aarav">👤 Aarav Sharma (Mumbai)</option>
+            <option value="priya">👤 Priya Patel (Mumbai)</option>
+            <option value="rohan">👤 Rohan Deshmukh (Mumbai)</option>
+          </optgroup>
+          <optgroup label="🇩🇪 Frankfurt Profiles">
+            <option value="lukas">👤 Lukas Weber (Frankfurt)</option>
+            <option value="emma">👤 Emma Becker (Frankfurt)</option>
+            <option value="jonas">👤 Jonas Schmidt (Frankfurt)</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -132,7 +143,7 @@
 
   <script>
     const REGION = 'virginia';
-    currentUser = 'charlie';
+    currentUser = 'alex';
   </script>
   <script src="/store.js"></script>
 </body>

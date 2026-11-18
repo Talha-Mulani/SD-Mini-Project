@@ -237,6 +237,21 @@
       </div>
     </header>
 
+    <!-- LIVE DASHBOARD DIRECT LINK BANNER -->
+    <div style="background:#0f1622;border:1px solid rgba(56,189,248,0.4);border-radius:8px;padding:12px 18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">🌐</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">Live Main Dashboard URL</div>
+          <code id="liveDashboardUrl" style="color:var(--accent);font-size:14px;font-weight:700;">http://...:3000</code>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="secondary" style="font-size:12px;padding:6px 12px;" onclick="navigator.clipboard.writeText(window.location.origin);this.textContent='Copied!';setTimeout(()=>this.textContent='📋 Copy Link',2000)">📋 Copy Link</button>
+        <a class="btn-store" style="padding:6px 12px;font-size:12px;" href="/" target="_blank">🔗 Open Fresh Window</a>
+      </div>
+    </div>
+
     <!-- SECTION 1: LIVE CLUSTER TELEMETRY & STATISTICS -->
     <div class="card-title">
       <span>📊 Live Cluster Telemetry & Performance Statistics</span>
@@ -285,12 +300,23 @@
 
         <div class="form-row-3">
           <div>
-            <label>Customer</label>
+            <label>Customer Profile</label>
             <select id="simUser" onchange="onUserChange()">
-              <option value="alice">👤 Alice (mumbai)</option>
-              <option value="bob">👤 Bob (frankfurt)</option>
-              <option value="charlie">👤 Charlie (virginia)</option>
-              <option value="david">👤 David (vip)</option>
+              <optgroup label="🇮🇳 Mumbai Shoppers">
+                <option value="aarav" selected>👤 Aarav Sharma (Mumbai - Electronics)</option>
+                <option value="priya">👤 Priya Patel (Mumbai - Tech Lead)</option>
+                <option value="rohan">👤 Rohan Deshmukh (Mumbai - Flash Hunter)</option>
+              </optgroup>
+              <optgroup label="🇩🇪 Frankfurt Shoppers">
+                <option value="lukas">👤 Lukas Weber (Frankfurt - Finance)</option>
+                <option value="emma">👤 Emma Becker (Frankfurt - Cloud Eng)</option>
+                <option value="jonas">👤 Jonas Schmidt (Frankfurt - Pro Gamer)</option>
+              </optgroup>
+              <optgroup label="🇺🇸 Virginia Shoppers">
+                <option value="alex">👤 Alex Mercer (Virginia - Architect)</option>
+                <option value="sarah">👤 Sarah Connor (Virginia - VIP Buyer)</option>
+                <option value="marcus">👤 Marcus Vance (Virginia - Data Eng)</option>
+              </optgroup>
             </select>
           </div>
           <div>
@@ -488,9 +514,9 @@
 
     function onUserChange() {
       const user = $('simUser').value;
-      if (user === 'alice') $('simRegion').value = 'mumbai';
-      else if (user === 'bob') $('simRegion').value = 'frankfurt';
-      else if (user === 'charlie') $('simRegion').value = 'virginia';
+      if (['aarav', 'priya', 'rohan'].includes(user)) $('simRegion').value = 'mumbai';
+      else if (['lukas', 'emma', 'jonas'].includes(user)) $('simRegion').value = 'frankfurt';
+      else if (['alex', 'sarah', 'marcus'].includes(user)) $('simRegion').value = 'virginia';
     }
 
     async function executeAction() {
@@ -798,6 +824,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      $('liveDashboardUrl').textContent = window.location.origin;
       onActionChange();
       fetchLiveStats();
       setInterval(fetchLiveStats, 2000);
