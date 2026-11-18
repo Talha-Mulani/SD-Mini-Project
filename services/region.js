@@ -179,6 +179,20 @@ app.post('/internal/partition', (req, res) => {
   });
 });
 
+app.get('/internal/recent-keys', async (req, res) => {
+  try {
+    const result = await pg.query(
+      `SELECT key, data_type, origin_region, updated_at
+       FROM records
+       ORDER BY updated_at DESC
+       LIMIT 25`
+    );
+    res.json({ region, keys: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/internal/records/:key', async (req, res) => {
   const key = req.params.key;
   logger.recordMetrics('GeoCache', [{ name: 'localReads', value: 1 }]);

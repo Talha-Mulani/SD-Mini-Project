@@ -3,6 +3,7 @@
 > **An Enterprise-Grade, Active-Active, Multi-Region Distributed Cache and Data Replication Platform**  
 > Spanning **Mumbai (`ap-south-1`)**, **Frankfurt (`eu-central-1`)**, and **Virginia (`us-east-1`)**.
 
+
 ---
 
 ## Table of Contents

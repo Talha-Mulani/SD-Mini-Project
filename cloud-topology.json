@@ -1,7 +1,6 @@
 {
-  "deployedAt": "2026-11-13T14:39:17.153Z",
+  "deployedAt": "2026-11-16T03:50:00.000Z",
   "account": "301572152039",
-  "securityGroupId": "sg-015fdbeb06749cd38",
   "instances": {
     "mumbai": {
       "id": "i-039912dbc6e2a10b3",
@@ -17,14 +16,14 @@
     }
   },
   "publicIps": {
-    "frankfurt": "3.88.2.144",
-    "mumbai": "54.210.14.166",
-    "virginia": "3.92.82.166"
+    "mumbai": "3.82.136.83",
+    "frankfurt": "100.61.145.64",
+    "virginia": "100.55.26.232"
   },
-  "gatewayUrl": "http://3.92.82.166:3000",
+  "gatewayUrl": "http://100.55.26.232:3000",
   "nodes": {
-    "mumbai": "http://54.210.14.166:5001",
-    "frankfurt": "http://3.88.2.144:5002",
-    "virginia": "http://3.92.82.166:5003"
+    "mumbai": "http://3.82.136.83:5001",
+    "frankfurt": "http://100.61.145.64:5002",
+    "virginia": "http://100.55.26.232:5003"
   }
 }

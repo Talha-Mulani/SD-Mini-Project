@@ -1,1 +1,139 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GlobalCart Frankfurt</title><link rel="stylesheet" href="/store.css"></head><body><header class="topbar"><div class="shell"><a class="logo" href="/">Global<span>Cart</span></a><span class="region-pill">Frankfurt store · Active</span></div></header><section class="hero"><div class="shell"><h1>Fast shopping for Europe, served from Frankfurt.</h1><p>Place orders in Frankfurt while the regional API persists your update and replicates it to Mumbai and Virginia.</p></div></section><main class="shell"><div class="section-title"><div><h2>Popular today</h2><p class="muted">Flash-sale prices, globally replicated catalog</p></div></div><div id="products" class="products"></div><section class="cart"><h2>Your cart</h2><div id="cart" style="margin-top:8px"></div><div id="notice" class="notice">Your regional shopping activity will appear here.</div></section></main><script>const REGION='frankfurt',CUSTOMER='frankfurt-customer-17';</script><script src="/store.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GlobalCart Frankfurt Hub | Active-Active GeoCache</title>
+  <link rel="stylesheet" href="/store.css">
+</head>
+<body>
+  <!-- Top Bar -->
+  <header class="topbar">
+    <div class="shell">
+      <a class="logo" href="/">
+        <span>⚡ GeoCache</span> | GlobalCart
+      </a>
+      <div class="nav-links">
+        <a class="nav-pill" href="/mumbai.html">🇮🇳 Mumbai Hub</a>
+        <a class="nav-pill active" href="/frankfurt.html">🇩🇪 Frankfurt Hub</a>
+        <a class="nav-pill" href="/virginia.html">🇺🇸 Virginia Hub</a>
+        <a class="nav-pill" href="/" style="background:var(--accent);color:#0b0f17;">🎛️ Control Center</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Banner -->
+  <section class="hero">
+    <div class="shell hero-content">
+      <div>
+        <div class="region-badge-large" style="color:#a855f7;border-color:#a855f7;background:rgba(168,85,247,0.15);">🇩🇪 eu-central-1 · Active Regional Node</div>
+        <h1>Frankfurt Store & Distributed Cache Hub</h1>
+        <p>Browse flash sales and update your cart with European low latency. Data is persisted locally in PostgreSQL, cached in L1 memory/L2 Redis, and replicated asynchronously across Mumbai and Virginia.</p>
+      </div>
+      <div class="user-selector-box">
+        <div>
+          <label>Active Shopper</label>
+          <div style="font-size:11px;color:var(--text-muted);">Switch customer profile:</div>
+        </div>
+        <select class="user-select" onchange="switchUser(this.value)">
+          <option value="bob" selected>👤 Bob (Frankfurt Shopper)</option>
+          <option value="alice">👤 Alice (Mumbai Local)</option>
+          <option value="charlie">👤 Charlie (Virginia VIP)</option>
+          <option value="david">👤 David (Global Buyer)</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Telemetry Radar Bar -->
+  <div class="shell">
+    <div class="telemetry-bar">
+      <div class="telem-card">
+        <div class="telem-label"><span>Local Latency</span><span>⚡</span></div>
+        <div id="telemetryLatency" class="telem-value" style="color:var(--purple);">1.1ms</div>
+      </div>
+      <div class="telem-card">
+        <div class="telem-label"><span>Outbox Pending</span><span>📦</span></div>
+        <div id="telemetryPending" class="telem-value" style="color:var(--green);">0</div>
+      </div>
+      <div class="telem-card">
+        <div class="telem-label"><span>Replicated Delivered</span><span>🚀</span></div>
+        <div id="telemetryDelivered" class="telem-value">0</div>
+      </div>
+      <div class="telem-card">
+        <div class="telem-label"><span>Circuit Breakers</span><span>🛡️</span></div>
+        <div id="telemetryCB" class="telem-value" style="font-size:14px;color:var(--green);">LOADING...</div>
+      </div>
+    </div>
+
+    <!-- Main Two-Column Layout -->
+    <div class="layout-split">
+      <!-- Left Column: Storefront & Cart -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <h2>🛍️ Flash-Sale Products (Live Inventory)</h2>
+            <span style="font-size:12px;color:var(--text-muted);">Region: <b>FRANKFURT</b></span>
+          </div>
+          <div id="productsGrid" class="products-grid"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>🛒 Shopping Cart (<span id="activeUserLabel">BOB</span>)</h2>
+            <div>
+              <span style="font-size:12px;color:var(--text-muted);margin-right:8px;">Subtotal:</span>
+              <strong id="cartTotal" style="font-size:18px;color:#a855f7;">$0.00</strong>
+            </div>
+          </div>
+          <div id="cartItems" class="cart-items-list"></div>
+          <button id="checkoutBtn" class="primary" style="width:100%;padding:11px;background:#a855f7;color:#fff;" onclick="checkout()" disabled>
+            💳 Place Order (HLC Monotonic Commit)
+          </button>
+          <div id="noticeBanner" class="live-notice">
+            <span>ℹ️</span>
+            <span>Add an item above to trigger a local write transaction and outbox replication.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Interactive Cache Inspector & Activity Feed -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <h3>🔍 Query Frankfurt Regional Cache</h3>
+            <span class="stock-badge" style="background:rgba(168,85,247,0.15);color:#a855f7;">Multi-Tier L1/L2</span>
+          </div>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+            Inspect any record directly from Frankfurt's memory cache, Redis, or PostgreSQL:
+          </p>
+          <div class="cache-query-bar">
+            <input id="cacheKeyInput" class="cache-input" value="cart:bob" placeholder="Enter key (e.g. cart:bob, inventory:ps5-pro)">
+            <button class="primary" style="background:#a855f7;color:#fff;" onclick="queryCache()">Query</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+            <button class="secondary" style="padding:3px 8px;font-size:11px;" onclick="$('cacheKeyInput').value='cart:'+currentUser;queryCache();">My Cart</button>
+            <button class="secondary" style="padding:3px 8px;font-size:11px;" onclick="$('cacheKeyInput').value='inventory:ps5-pro';queryCache();">PS5 Stock</button>
+            <button class="secondary" style="padding:3px 8px;font-size:11px;" onclick="$('cacheKeyInput').value='inventory:iphone-16';queryCache();">iPhone Stock</button>
+          </div>
+          <div id="cacheResult" class="cache-result-box"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📜 Regional Event Activity Log</h3>
+            <span style="font-size:11px;color:var(--text-muted);">Real-Time</span>
+          </div>
+          <div id="activityFeed" class="activity-feed"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const REGION = 'frankfurt';
+    currentUser = 'bob';
+  </script>
+  <script src="/store.js"></script>
+</body>
+</html>

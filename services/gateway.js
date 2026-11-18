@@ -143,6 +143,86 @@ app.get('/api/topology', (req, res) => {
   res.json({ regions: healthState });
 });
 
+app.get('/api/live-stats', async (req, res) => {
+  const aggregated = {
+    timestamp: new Date().toISOString(),
+    regionsOnline: 0,
+    totalRegions: Object.keys(regions).length,
+    totalLocalWrites: 0,
+    totalLocalReads: 0,
+    totalCacheHitsL1: 0,
+    totalCacheHitsL2: 0,
+    totalCacheMisses: 0,
+    totalReplicatedReceived: 0,
+    totalReplicatedSent: 0,
+    totalPendingOutbox: 0,
+    totalDeadLetter: 0,
+    cacheHitRatePct: 0,
+    regions: {}
+  };
+
+  await Promise.all(Object.entries(regions).map(async ([r, url]) => {
+    try {
+      const resp = await fetch(`${url}/health`, { signal: AbortSignal.timeout(1200) });
+      if (resp.ok) {
+        const body = await resp.json();
+        aggregated.regionsOnline++;
+        const m = body.metrics || {};
+        const ob = body.outbox || {};
+        const dlq = body.dlq || {};
+
+        aggregated.totalLocalWrites += (m.localWrites || 0);
+        aggregated.totalLocalReads += (m.localReads || 0);
+        aggregated.totalCacheHitsL1 += (m.cacheHitsL1 || 0);
+        aggregated.totalCacheHitsL2 += (m.cacheHitsL2 || 0);
+        aggregated.totalCacheMisses += (m.cacheMisses || 0);
+        aggregated.totalReplicatedReceived += (m.replicatedReceived || 0);
+        aggregated.totalReplicatedSent += (m.replicatedSent || 0);
+        aggregated.totalPendingOutbox += (ob.pending || 0);
+        aggregated.totalDeadLetter += (dlq.count || 0);
+
+        aggregated.regions[r] = {
+          healthy: true,
+          outbox: ob,
+          dlq,
+          metrics: m,
+          circuitBreakers: body.circuitBreakers,
+          hlc: body.hlc
+        };
+      } else {
+        aggregated.regions[r] = { healthy: false, error: `HTTP ${resp.status}` };
+      }
+    } catch (e) {
+      aggregated.regions[r] = { healthy: false, error: e.message };
+    }
+  }));
+
+  const totalHits = aggregated.totalCacheHitsL1 + aggregated.totalCacheHitsL2;
+  const totalReads = totalHits + aggregated.totalCacheMisses;
+  aggregated.cacheHitRatePct = totalReads > 0 ? Number(((totalHits / totalReads) * 100).toFixed(1)) : 100.0;
+
+  res.json(aggregated);
+});
+
+app.get('/api/keys', async (req, res) => {
+  const seenKeys = new Map();
+  await Promise.all(Object.entries(regions).map(async ([r, url]) => {
+    try {
+      const resp = await fetch(`${url}/internal/recent-keys`, { signal: AbortSignal.timeout(1000) });
+      if (resp.ok) {
+        const data = await resp.json();
+        for (const item of (data.keys || [])) {
+          if (!seenKeys.has(item.key)) {
+            seenKeys.set(item.key, { ...item, sourceRegion: r });
+          }
+        }
+      }
+    } catch {}
+  }));
+
+  res.json({ keys: Array.from(seenKeys.values()) });
+});
+
 app.get('/api/ring', (req, res) => {
   const sampleKey = req.query.key || 'cart:sample';
   const primary = hashRing.getNode(sampleKey);
